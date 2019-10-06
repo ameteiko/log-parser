@@ -1,0 +1,46 @@
+run:
+  concurrency: 4
+  tests: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: true
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0.8
+  goimports:
+    local-prefixes: github.com/ameteiko/errors
+  gocyclo:
+    min-complexity: 10
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 75
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  depguard:
+    list-type: blacklist
+    include-go-root: false
+  misspell:
+    locale: US
+    ignore-words:
+      - someword
+  lll:
+    line-length: 120
+    tab-width: 1
+  unused:
+    check-exported: false
+  unparam:
+    check-exported: false
+  nakedret:
+    max-func-lines: 20
+  prealloc:
+    simple: true
+    range-loops: true # Report preallocation suggestions on range loops, true by default
+    for-loops: false # Report preallocation suggestions on for loops, false by default
+linters:
+  enable-all: true
+  fast: false
