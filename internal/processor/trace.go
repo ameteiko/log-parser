@@ -41,6 +41,7 @@ func buildTrace(messages []*parser.Message, callTrace *call, spanTo string) {
 			End:     m.End,
 			Service: m.Service,
 			Span:    m.SpanTo,
+			Calls:   make([]*call, 0),
 		}
 		buildTrace(messages, &c, m.SpanTo)
 		callTrace.Calls = append(callTrace.Calls, &c)

@@ -121,6 +121,7 @@ func (p *Processor) processAfterContextExpiration(ctx context.Context, trace str
 			End:     root.End,
 			Service: root.Service,
 			Span:    root.SpanTo,
+			Calls:   make([]*call, 0),
 		},
 	}
 	buildTrace(p.traceMessages[trace], result.Root, root.SpanTo)
