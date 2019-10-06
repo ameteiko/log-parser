@@ -35,6 +35,7 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			msg, err := Parse(tc.logMessage)
 			// TODO: readjust this comparison when more tests are added.

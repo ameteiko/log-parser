@@ -10,14 +10,11 @@ import (
 )
 
 const (
-	reDatetime = `[\dTZ\.\-\:]*`
-	reTrace    = `[\w-]{1,}`
+	datetimeRegExp = `[\dTZ\.\-\:]*`
+	traceRegExp    = `[\w-]{1,}`
 )
 
 var (
-	// TODO: improve regular expression rules: use word boundaries instead spaces, improve UTC timestamp regular
-	//  expression, etc.
-	logMessageRE = regexp.MustCompile(fmt.Sprintf("(%[1]s) (%[1]s) (%[2]s) (%[2]s) (%[2]s)->(%[2]s)", reDatetime, reTrace))
 
 	// Validation errors.
 	errLogMessageParsing     = errors.New("log message parsing error")
@@ -44,6 +41,11 @@ type Message struct {
 
 // Parse parses a log line into a Message object.
 func Parse(msg string) (*Message, error) {
+	// TODO: improve regular expression rules: use word boundaries instead spaces, improve UTC timestamp regular
+	//  expression, etc.
+	logMessagePattern := fmt.Sprintf("(%[1]s) (%[1]s) (%[2]s) (%[2]s) (%[2]s)->(%[2]s)", datetimeRegExp, traceRegExp)
+	logMessageRE := regexp.MustCompile(logMessagePattern)
+
 	fields := logMessageRE.FindStringSubmatch(msg)
 	if len(fields) == 0 {
 		return nil, errLogMessageParsing
