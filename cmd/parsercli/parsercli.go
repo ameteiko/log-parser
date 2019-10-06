@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/ameteiko/log-parser/internal/processor"
+	"github.com/ameteiko/log-parser/internal/stats"
 )
 
 const (
@@ -31,12 +34,9 @@ func main() {
 		return
 	}
 
-	for cfg.input.Scan() {
-		fmt.Println(cfg.input.Text())
-	}
-	if err := cfg.input.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
-	}
+	stat := stats.NewStats()
+	p := processor.NewProcessor(cfg.input, stat)
+	p.Process()
 
 	println("Done!")
 }
