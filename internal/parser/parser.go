@@ -15,29 +15,10 @@ const (
 )
 
 var (
-
 	// Validation errors.
 	errLogMessageParsing     = errors.New("log message parsing error")
 	errLogMessageDateInvalid = errors.New("date is invalid in log message")
 )
-
-// Message represents log file data entry.
-// Messaged with fields 2016-10-20T12:43:34.000Z 2016-10-20T12:43:35.000Z trace1 back-end-3 ac->ad is parsed to:
-//
-// 2016-10-20T12:43:34.000Z - Start
-// 2016-10-20T12:43:35.000Z - End
-// trace1                  - Trace
-// back-end-3              - Service
-// ac                      - SpanFrom
-// ad                      - SpanTo
-type Message struct {
-	Service  string
-	Trace    string
-	SpanFrom string
-	SpanTo   string
-	Start    time.Time
-	End      time.Time
-}
 
 // Parse parses a log line into a Message object.
 func Parse(msg string) (*Message, error) {
