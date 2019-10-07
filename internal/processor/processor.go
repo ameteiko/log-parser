@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	processingTimeout = 100 * time.Millisecond
+	processingTimeout = 10 * time.Millisecond
 )
 
 type Processor struct {
 	input         *bufio.Scanner
 	stats         statsUpdater
 	pendingTraces sync.WaitGroup
-	traceLocks    sync.Map
+	mx            sync.Mutex
 	traceMessages map[string][]*parser.Message
 }
 
@@ -35,8 +35,8 @@ func NewProcessor(input *bufio.Scanner, stats statsUpdater) *Processor {
 	return &Processor{
 		input:         input,
 		stats:         stats,
+		mx:            sync.Mutex{},
 		pendingTraces: sync.WaitGroup{},
-		traceLocks:    sync.Map{},
 		traceMessages: make(map[string][]*parser.Message),
 	}
 }
@@ -49,17 +49,11 @@ func (p *Processor) accumulateMessage(ctx context.Context, msgChan <-chan *parse
 		case <-ctx.Done():
 			return
 		case msg := <-msgChan:
-			l, ok := p.traceLocks.Load(msg.Trace)
-			if !ok {
-				p.stats.IncOrphanLines()
-				continue
-			}
-			traceLock := l.(*sync.Mutex)
-			traceLock.Lock()
+			p.mx.Lock()
 			{
 				p.traceMessages[msg.Trace] = append(p.traceMessages[msg.Trace], msg)
 			}
-			traceLock.Unlock()
+			p.mx.Unlock()
 		}
 	}
 }
@@ -95,18 +89,12 @@ func (p *Processor) Process() {
 // ensures that some earlier entries will be collected.
 func (p *Processor) processAfterContextExpiration(ctx context.Context, trace string) {
 	p.pendingTraces.Add(1)
-	defer p.unregisterTrace(trace)
 	defer p.pendingTraces.Done()
 
 	<-ctx.Done()
 
-	l, ok := p.traceLocks.Load(trace)
-	if !ok {
-		// TODO: synchronization problem. Log it here.
-		return
-	}
-	// No lock release because the processing will be over.
-	l.(*sync.Mutex).Lock()
+	p.mx.Lock()
+	defer p.mx.Unlock()
 
 	root := findRoot(p.traceMessages[trace])
 	if root == nil {
@@ -138,17 +126,6 @@ func (p *Processor) processAfterContextExpiration(ctx context.Context, trace str
 // registerTrace registers trace as waiting for a processing. Here it means that the mutex is created for it.
 // TODO: it would be better to extend the processingTimeout on each new entry.
 func (p *Processor) registerTrace(ctx context.Context, trace string) {
-	if _, ok := p.traceLocks.Load(trace); ok {
-		return
-	}
-
 	timeoutCtx, _ := context.WithTimeout(ctx, processingTimeout)
 	go p.processAfterContextExpiration(timeoutCtx, trace)
-
-	p.traceLocks.Store(trace, &sync.Mutex{})
-}
-
-// registerTrace registers trace as waiting for a processing. Here it means that the mutex is created for it.
-func (p *Processor) unregisterTrace(trace string) {
-	p.traceLocks.Delete(trace)
 }
